@@ -133,7 +133,7 @@ func (o *OktaSync) ListUsers(ctx context.Context) ([]identity.IDPUser, error) {
 
 	log.Debugw("listing all okta users")
 
-	users, res, err := o.client.User.ListUsers(ctx, &query.Params{})
+	users, res, err := o.client.Group.ListGroupUsers(ctx, "00gw49vokpb7X1jUI357", &query.Params{})
 	if err != nil {
 		// try and log the response body
 		logResponseErr(log, res, err)
