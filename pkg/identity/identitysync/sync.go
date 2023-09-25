@@ -108,7 +108,7 @@ func (s *IdentitySyncer) Sync(ctx context.Context) error {
 		return err
 	}
 
-	idpUsers, err := s.idp.ListUsers(ctx)
+	idpUsers, err := s.idp.ListUsers(ctx, idpGroups)
 	if err != nil {
 		return err
 	}
