@@ -17,17 +17,19 @@ import (
 )
 
 type OktaSync struct {
-	client   *okta.Client
-	orgURL   gconfig.StringValue
-	apiToken gconfig.SecretStringValue
-	groups   gconfig.StringValue
+	client      *okta.Client
+	orgURL      gconfig.StringValue
+	apiToken    gconfig.SecretStringValue
+	userGroups  gconfig.StringValue
+	groupFilter gconfig.OptionalStringField
 }
 
 func (s *OktaSync) Config() gconfig.Config {
 	return gconfig.Config{
 		gconfig.StringField("orgUrl", &s.orgURL, "the Okta organization URL"),
 		gconfig.SecretStringField("apiToken", &s.apiToken, "the Okta API token", gconfig.WithNoArgs("/granted/secrets/identity/okta/token")),
-		gconfig.StringField("groups", &s.groups, "Groups that users are synced from."),
+		gconfig.StringField("user_groups", &s.userGroups, "Groups that users are synced from."),
+		gconfig.OptionalStringField("group_filter", &s.groupFilter, "Okta API filter to groups to sync"),
 	}
 }
 
@@ -127,7 +129,7 @@ func (o *OktaSync) ListUsers(ctx context.Context, groups []identity.IDPGroup) ([
 	log.Debugw("listing all okta users")
 
 	oktaUsers := make(map[string]*okta.User)
-	for _, groupId := range strings.Split(o.groups.Get(), ",") {
+	for _, groupId := range strings.Split(o.userGroups.Get(), ",") {
 		log.Infow(fmt.Sprintf("fetching users for groupId = %s", groupId))
 		users, res, err := o.client.Group.ListGroupUsers(ctx, groupId, &query.Params{})
 		if err != nil {
@@ -168,7 +170,6 @@ func (o *OktaSync) ListUsers(ctx context.Context, groups []identity.IDPGroup) ([
 		if err != nil {
 			return nil, errors.Wrapf(err, "converting okta user %s to internal user", u.Id)
 		}
-		// Set the membership based on the previously queried groups
 		user.Groups = userToGroups[oktaUser.Id]
 		idpUsers = append(idpUsers, user)
 	}
@@ -183,7 +184,10 @@ func (o *OktaSync) ListGroups(ctx context.Context) ([]identity.IDPGroup, error) 
 
 	idpGroups := []identity.IDPGroup{}
 
-	groups, res, err := o.client.Group.ListGroups(ctx, &query.Params{})
+	groups, res, err := o.client.Group.ListGroups(ctx,
+		&query.Params{
+			Filter: o.groupFilter.Get(),
+		})
 	if err != nil {
 		// try and log the response body
 		logResponseErr(log, res, err)
