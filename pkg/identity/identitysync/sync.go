@@ -19,8 +19,8 @@ import (
 )
 
 type IdentityProvider interface {
-	ListUsers(ctx context.Context) ([]identity.IDPUser, error)
-	ListGroups(ctx context.Context, groups []identity.IDPGroup) ([]identity.IDPGroup, error)
+	ListUsers(ctx context.Context, groups []identity.IDPGroup) ([]identity.IDPUser, error)
+	ListGroups(ctx context.Context) ([]identity.IDPGroup, error)
 	gconfig.Configer
 	gconfig.Initer
 }
