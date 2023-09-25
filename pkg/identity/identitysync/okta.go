@@ -45,13 +45,13 @@ func (s *OktaSync) Init(ctx context.Context) error {
 }
 
 func (s *OktaSync) TestConfig(ctx context.Context) error {
-	_, err := s.ListUsers(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to list users while testing okta identity provider configuration")
-	}
-	_, err = s.ListGroups(ctx)
+	groups, err = s.ListGroups(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list groups while testing okta identity provider configuration")
+	}
+	_, err := s.ListUsers(ctx, groups)
+	if err != nil {
+		return errors.Wrap(err, "failed to list users while testing okta identity provider configuration")
 	}
 	return nil
 }
@@ -95,16 +95,6 @@ func (o *OktaSync) idpUserFromOktaUser(ctx context.Context, oktaUser *okta.User)
 		Groups:    []string{},
 	}
 
-	log.Debug("listing groups for user")
-
-	userGroups, _, err := o.client.User.ListUserGroups(ctx, oktaUser.Id)
-	if err != nil {
-		return u, errors.Wrapf(err, "listing groups for okta user %s", oktaUser.Id)
-	}
-	for _, g := range userGroups {
-		u.Groups = append(u.Groups, g.Id)
-	}
-
 	log.Debugw("finished converting okta user to internal user", "user", u)
 
 	return u, nil
@@ -128,7 +118,7 @@ func logResponseErr(log *zap.SugaredLogger, res *okta.Response, err error) {
 	}
 }
 
-func (o *OktaSync) ListUsers(ctx context.Context) ([]identity.IDPUser, error) {
+func (o *OktaSync) ListUsers(ctx context.Context, groups []identity.IDPGroup) ([]identity.IDPUser, error) {
 	log := logger.Get(ctx)
 
 	//get all users
@@ -164,12 +154,22 @@ func (o *OktaSync) ListUsers(ctx context.Context) ([]identity.IDPUser, error) {
 		}
 	}
 
+	// Build group membership per user based on the group
+	userToGroups := map[string][]string{}
+	for _, group := range groups {
+		for _, user := range group.Users {
+			userToGroup[user] = append(userToGroup[user], group.IdpID)
+		}
+	}
+
 	// convert all Okta users to internal users
 	for _, u := range oktaUsers {
 		user, err := o.idpUserFromOktaUser(ctx, u)
 		if err != nil {
 			return nil, errors.Wrapf(err, "converting okta user %s to internal user", u.Id)
 		}
+		// Set the membership based on the previously queried groups
+		user.Groups = userToGroups[oktaUser.Id]
 		idpUsers = append(idpUsers, user)
 	}
 

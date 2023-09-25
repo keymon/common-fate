@@ -20,7 +20,7 @@ import (
 
 type IdentityProvider interface {
 	ListUsers(ctx context.Context) ([]identity.IDPUser, error)
-	ListGroups(ctx context.Context) ([]identity.IDPGroup, error)
+	ListGroups(ctx context.Context, groups []identity.IDPGroup) ([]identity.IDPGroup, error)
 	gconfig.Configer
 	gconfig.Initer
 }
@@ -102,16 +102,16 @@ func (s *IdentitySyncer) Sync(ctx context.Context) error {
 
 	//Fetch all users from IDP
 	// The IDP should return the group mappings for users, these group IDs will be internal to the IDP
-	idpUsers, err := s.idp.ListUsers(ctx)
-	if err != nil {
-		return err
-	}
 	// Fetch all groups from IDP
 	idpGroups, err := s.idp.ListGroups(ctx)
 	if err != nil {
 		return err
 	}
 
+	idpUsers, err := s.idp.ListUsers(ctx)
+	if err != nil {
+		return err
+	}
 	/*
 
 		example regex filter: "admins|devops"
