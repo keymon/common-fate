@@ -189,6 +189,7 @@ type Parameters struct {
 	IDPSyncTimeoutSeconds           string         `yaml:"IDPSyncTimeoutSeconds,omitempty"`
 	IDPSyncSchedule                 string         `yaml:"IDPSyncSchedule,omitempty"`
 	IDPSyncMemory                   string         `yaml:"IDPSyncMemory,omitempty"`
+	LambdaVpcId                     string         `yaml:"LambdaVpcId,omitempty"`
 }
 
 // UnmarshalFeatureMap parses the JSON configuration data and returns

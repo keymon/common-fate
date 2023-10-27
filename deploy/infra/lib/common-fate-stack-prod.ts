@@ -207,6 +207,16 @@ export class CommonFateStackProd extends cdk.Stack {
       }
     );
 
+    const lambdaVpcId = new CfnParameter(
+        this,
+        "LambdaVpcId",
+        {
+          type: "String",
+          description: "VPC that grant lambda will be attached to.",
+          default: "",
+        }
+    )
+
     const appName = this.stackName + suffix.valueAsString;
 
     const db = new Database(this, "Database", {
@@ -272,6 +282,7 @@ export class CommonFateStackProd extends cdk.Stack {
         eventBus: events.getEventBus(),
         eventBusSourceName: events.getEventBusSourceName(),
         dynamoTable: db.getTable(),
+        lambdaVpcId: lambdaVpcId.valueAsString
       }
     );
     const appBackend = new AppBackend(this, "API", {
