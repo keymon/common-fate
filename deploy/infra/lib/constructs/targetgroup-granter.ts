@@ -8,18 +8,18 @@ import { EventBus } from "aws-cdk-lib/aws-events";
 import { grantAssumeHandlerRole } from "../helpers/permissions";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import { BaseLambdaProps, BaseLambdaConstruct  } from "../helpers/base-lambda";
 
-interface Props {
+interface Props extends BaseLambdaProps {
   eventBusSourceName: string;
   dynamoTable: Table;
   eventBus: EventBus;
-  lambdaVpcId: string,
 }
-export class TargetGroupGranter extends Construct {
+export class TargetGroupGranter extends BaseLambdaConstruct {
   private _stateMachine: sfn.StateMachine;
   private _lambda: lambda.Function;
   constructor(scope: Construct, id: string, props: Props) {
-    super(scope, id);
+    super(scope, id, props);
     const code = lambda.Code.fromAsset(
       path.join(
         __dirname,
@@ -32,10 +32,6 @@ export class TargetGroupGranter extends Construct {
       )
     );
 
-    const vpc = ec2.Vpc.fromLookup(this, 'Vpc', {
-      vpcId: props.lambdaVpcId,
-    });
-
     this._lambda = new lambda.Function(this, "StepHandlerFunction", {
       code,
       timeout: Duration.minutes(5),
@@ -46,7 +42,9 @@ export class TargetGroupGranter extends Construct {
       },
       runtime: lambda.Runtime.GO_1_X,
       handler: "targetgroup-granter",
-      vpc: vpc,
+      vpc: this.vpc,
+      vpcSubnets: this.subnets,
+      securityGroups: this.securityGroups,
     });
 
     props.dynamoTable.grantReadWriteData(this._lambda);

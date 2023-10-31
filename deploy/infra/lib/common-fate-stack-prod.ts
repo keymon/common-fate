@@ -18,6 +18,7 @@ import {
 import { Database } from "./constructs/database";
 import { Governance } from "./constructs/governance";
 import { TargetGroupGranter } from "./constructs/targetgroup-granter";
+import { LambdaNetworkConfig  } from "../helpers/base-lambda";
 
 interface Props extends cdk.StackProps {
   productionReleasesBucket: string;
@@ -207,15 +208,25 @@ export class CommonFateStackProd extends cdk.Stack {
       }
     );
 
-    const lambdaVpcId = new CfnParameter(
-        this,
-        "LambdaVpcId",
-        {
-          type: "String",
-          description: "VPC that grant lambda will be attached to.",
-          default: "",
-        }
-    )
+
+    // Define CfnParameters
+    const lambdaVpcId = new cdk.CfnParameter(this, 'LambdaVpcId', {
+      type: 'AWS::EC2::VPC::Id',
+      description: 'The ID of the VPC to assign to the lambdas',
+      default: "",
+    });
+
+    const lambdaSubnetIds = new cdk.CfnParameter(this, 'LambdaSubnetIds', {
+      type: 'List<AWS::EC2::Subnet::Id>',
+      description: 'The IDs of the subnets to assign to the lambdas',
+      default: "",
+    });
+
+    const lambdaSecurityGroupIds = new cdk.CfnParameter(this, 'LambdaSecurityGroupIds', {
+      type: 'List<AWS::EC2::SecurityGroup::Id>',
+      description: 'The IDs of the security group to assign to the lambdas',
+      default: "",
+    });
 
     const appName = this.stackName + suffix.valueAsString;
 
@@ -282,7 +293,11 @@ export class CommonFateStackProd extends cdk.Stack {
         eventBus: events.getEventBus(),
         eventBusSourceName: events.getEventBusSourceName(),
         dynamoTable: db.getTable(),
-        lambdaVpcId: lambdaVpcId.valueAsString
+        lambdaNetworkConfig: {
+          vpcId: lambdaVpcId,
+          subnetIds: lambdaSubnetIds,
+          securityGroupIds: lambdaSecurityGroupIds,
+        }
       }
     );
     const appBackend = new AppBackend(this, "API", {
