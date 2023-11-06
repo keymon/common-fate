@@ -46,58 +46,63 @@ func (m mockOktaClient) ListGroups(ctx context.Context, qp *query.Params) ([]*ok
 	return m.listGroups(), defaultResponse, nil
 }
 
-var listOfGroups = []*okta.Group{
-	{
-		Id: "group1",
-		Profile: &okta.GroupProfile{
-			Description: "desc1",
-			Name:        "name1",
+func getListOfGroups() []*okta.Group {
+	return []*okta.Group{
+		{
+			Id: "group1",
+			Profile: &okta.GroupProfile{
+				Description: "desc1",
+				Name:        "name1",
+			},
 		},
-	},
-	{
-		Id: "group2",
-		Profile: &okta.GroupProfile{
-			Description: "desc2",
-			Name:        "name2",
+		{
+			Id: "group2",
+			Profile: &okta.GroupProfile{
+				Description: "desc2",
+				Name:        "name2",
+			},
 		},
-	},
-	{
-		Id: "group3",
-		Profile: &okta.GroupProfile{
-			Description: "desc3",
-			Name:        "name3",
+		{
+			Id: "group3",
+			Profile: &okta.GroupProfile{
+				Description: "desc3",
+				Name:        "name3",
+			},
 		},
-	},
+	}
 }
 
-var listOfUsers = []*okta.User{
-	{
-		Id: "user1",
-		Profile: &okta.UserProfile{
-			"firstName": "name1",
-			"lastName":  "surname1",
-			"email":     "email1@email.com",
+func getListOfUsers() []*okta.User {
+	return []*okta.User{
+		{
+			Id: "user1",
+			Profile: &okta.UserProfile{
+				"firstName": "name1",
+				"lastName":  "surname1",
+				"email":     "email1@email.com",
+			},
 		},
-	},
-	{
-		Id: "user2",
-		Profile: &okta.UserProfile{
-			"firstName": "name2",
-			"lastName":  "surname2",
-			"email":     "email2@email.com",
+		{
+			Id: "user2",
+			Profile: &okta.UserProfile{
+				"firstName": "name2",
+				"lastName":  "surname2",
+				"email":     "email2@email.com",
+			},
 		},
-	},
-	{
-		Id: "user3",
-		Profile: &okta.UserProfile{
-			"firstName": "name3",
-			"lastName":  "surname3",
-			"email":     "email3@email.com",
+		{
+			Id: "user3",
+			Profile: &okta.UserProfile{
+				"firstName": "name3",
+				"lastName":  "surname3",
+				"email":     "email3@email.com",
+			},
 		},
-	},
+	}
 }
 
 func TestOktaSync_ListGroups(t *testing.T) {
+	listOfGroups := getListOfGroups()
 
 	oktaSync := OktaSync{
 		client: &mockOktaClient{
@@ -131,6 +136,9 @@ func TestOktaSync_ListGroups(t *testing.T) {
 }
 
 func TestOktaSync_ListUsersWithoutGroupConfig(t *testing.T) {
+	listOfGroups := getListOfGroups()
+	listOfUsers := getListOfUsers()
+
 	oktaSync := OktaSync{
 		client: &mockOktaClient{
 			listUserGroups: func(userId string) []*okta.Group {
@@ -165,6 +173,9 @@ func TestOktaSync_ListUsersWithoutGroupConfig(t *testing.T) {
 }
 
 func TestOktaSync_ListUsersWithGroupConfig(t *testing.T) {
+	listOfGroups := getListOfGroups()
+	listOfUsers := getListOfUsers()
+
 	oktaSync := OktaSync{
 		client: &mockOktaClient{
 			listGroupUsers: func(groupId string) []*okta.User {
@@ -206,6 +217,9 @@ func TestOktaSync_ListUsersWithGroupConfig(t *testing.T) {
 }
 
 func TestOktaSync_Wildcard(t *testing.T) {
+	listOfGroups := getListOfGroups()
+	listOfUsers := getListOfUsers()
+
 	oktaSync := OktaSync{
 		client: &mockOktaClient{
 			listGroupUsers: func(groupId string) []*okta.User {
