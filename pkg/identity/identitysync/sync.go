@@ -178,7 +178,9 @@ func (s *IdentitySyncer) Sync(ctx context.Context) error {
 
 	s.setDeploymentInfo(ctx, log, depid.UserInfo{UserCount: len(idpUsers), GroupCount: len(idpGroups), IDP: s.idpType})
 
-	uq := &storage.ListUsers{}
+	uq := &storage.ListUsersForStatus{
+		Status: types.IdpStatusACTIVE,
+	}
 	_, err = s.db.Query(ctx, uq)
 	if err != nil {
 		return err
@@ -234,7 +236,10 @@ func processUsersAndGroups(idpType string, idpUsers []identity.IDPUser, idpGroup
 	}
 	ddbUserMap := make(map[string]identity.User)
 	for _, u := range internalUsers {
-		ddbUserMap[u.Email] = u
+		// Collect the latest updated entry with same email
+		if u2, ok := ddbUserMap[u.Email]; !ok || u.UpdatedAt.Before(u2.UpdatedAt) {
+			ddbUserMap[u.Email] = u
+		}
 	}
 	ddbGroupMap := make(map[string]identity.Group)
 	// This map ensures we have a distinct list of ids
